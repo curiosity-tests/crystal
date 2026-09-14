@@ -37,10 +37,16 @@ jobs:
       image: crystallang/crystal:1.21.0-build
     name: "Test Interpreter"
     steps:
-      - uses: actions/checkout@v7
+      - uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          lfs: false
           persist-credentials: false
-
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
       - name: Test interpreter_spec
         run: make interpreter_spec junit_output=.junit/interpreter_spec.xml
 
@@ -50,10 +56,16 @@ jobs:
       image: crystallang/crystal:1.21.0-build
     name: Build interpreter
     steps:
-      - uses: actions/checkout@v7
+      - uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          lfs: false
           persist-credentials: false
-
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
       - name: Build compiler
         run: make interpreter=1 release=1
 
@@ -75,10 +87,16 @@ jobs:
         part: [0, 1, 2, 3]
     name: "Test std_spec with interpreter (${{ matrix.part }})"
     steps:
-      - uses: actions/checkout@v7
+      - uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          lfs: false
           persist-credentials: false
-
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
       - name: Download compiler artifact
         uses: actions/download-artifact@v8
         with:
@@ -98,10 +116,16 @@ jobs:
       image: crystallang/crystal:1.21.0-build
     name: "Test primitives_spec with interpreter"
     steps:
-      - uses: actions/checkout@v7
+      - uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          lfs: false
           persist-credentials: false
-
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
       - name: Download compiler artifact
         uses: actions/download-artifact@v8
         with:
