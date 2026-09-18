@@ -39,17 +39,8 @@ jobs:
       llvm_version: ${{ inputs.llvm_version }}
       llvm_targets: ${{ inputs.llvm_targets }}
 
-  build-stage1:
-    name: Build stage-1 compiler
-    needs: [build-deps]
-    uses: ./.github/workflows/win_arm64.yml
-    if: ${{ inputs.arch == 'aarch64' }}
-    with:
-      arch: ${{ inputs.arch }}
-
   build-release:
     name: Build compiler
-    needs: [build-stage1]
     uses: ./.github/workflows/win_build_portable.yml
     if: ${{ !cancelled() }}
     with:
@@ -66,55 +57,55 @@ jobs:
     needs: [build-release]
     if: ${{ !cancelled() }}
     steps:
-      - name: Disable CRLF line ending substitution
-        run: |
-          git config --global core.autocrlf false
+    - name: Disable CRLF line ending substitution
+      run: |
+        git config --global core.autocrlf false
 
-      - name: Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
-        with:
-          arch: ${{ env.WIN_ARCH }}
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756   # v1.13.0
+      with:
+        arch: ${{ env.WIN_ARCH }}
 
-      - name: Download Crystal source
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+    - name: Download Crystal source
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
-      - name: Download Crystal executable
-        uses: actions/download-artifact@v8
-        with:
-          name: crystal-${{ inputs.arch }}-windows-msvc
-          path: build
+    - name: Download Crystal executable
+      uses: actions/download-artifact@v8
+      with:
+        name: crystal-${{ inputs.arch }}-windows-msvc
+        path: build
 
-      - name: Set up environment
-        run: |
-          Add-Content $env:GITHUB_PATH "$(pwd)\build"
-          Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
-          Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
-          Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
-          Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
-        env:
-          INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
-          INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
-          INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
+    - name: Set up environment
+      run: |
+        Add-Content $env:GITHUB_PATH "$(pwd)\build"
+        Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
+        Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
+        Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
+        Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
+      env:
+        INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
+        INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
+        INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
 
-      - name: Run stdlib specs
-        run: make -f Makefile.win std_spec
+    - name: Run stdlib specs
+      run: make -f Makefile.win std_spec
 
-      - name: Run compiler specs
-        run: make -f Makefile.win compiler_spec
+    - name: Run compiler specs
+      run: make -f Makefile.win compiler_spec
 
-      - name: Run interpreter specs
-        run: make -f Makefile.win interpreter_spec
+    - name: Run interpreter specs
+      run: make -f Makefile.win interpreter_spec
 
-      - name: Run primitives specs
-        run: make -f Makefile.win -o .build\crystal.exe primitives_spec # we know the compiler is fresh; do not rebuild it here
+    - name: Run primitives specs
+      run: make -f Makefile.win -o .build\crystal.exe primitives_spec   # we know the compiler is fresh; do not rebuild it here
 
-      - name: Run CLI specs
-        run: make -f Makefile.win cli_spec
+    - name: Run CLI specs
+      run: make -f Makefile.win cli_spec
 
-      - name: Build samples
-        run: make -f Makefile.win samples
+    - name: Build samples
+      run: make -f Makefile.win samples
 
   run-tests-mt:
     name: Run tests (MT)
@@ -125,45 +116,45 @@ jobs:
       fail-fast: false
       matrix:
         opts:
-          - flags: "-Dwithout_mt"
-          - workers: 4 # execution_context: parallel
+        - flags: "-Dwithout_mt"
+        - workers: 4   # execution_context: parallel
 
     steps:
-      - name: Disable CRLF line ending substitution
-        run: git config --global core.autocrlf false
+    - name: Disable CRLF line ending substitution
+      run: git config --global core.autocrlf false
 
-      - name: Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
-        with:
-          arch: ${{ env.WIN_ARCH }}
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756   # v1.13.0
+      with:
+        arch: ${{ env.WIN_ARCH }}
 
-      - name: Download Crystal source
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+    - name: Download Crystal source
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
-      - name: Download Crystal executable
-        uses: actions/download-artifact@v8
-        with:
-          name: crystal-${{ inputs.arch }}-windows-msvc
-          path: build
+    - name: Download Crystal executable
+      uses: actions/download-artifact@v8
+      with:
+        name: crystal-${{ inputs.arch }}-windows-msvc
+        path: build
 
-      - name: Set up environment
-        run: |
-          Add-Content $env:GITHUB_PATH "$(pwd)\build"
-          Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
-          Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
-          Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
-          Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
-        env:
-          INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
-          INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
-          INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
+    - name: Set up environment
+      run: |
+        Add-Content $env:GITHUB_PATH "$(pwd)\build"
+        Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
+        Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
+        Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
+        Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
+      env:
+        INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
+        INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
+        INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
 
-      - name: Test
-        run: make -f Makefile.win std_spec FLAGS="${{ matrix.opts.flags || '' }}"
-        env:
-          CRYSTAL_WORKERS: ${{ matrix.opts.workers || 1 }}
+    - name: Test
+      run: make -f Makefile.win std_spec FLAGS="${{ matrix.opts.flags || '' }}"
+      env:
+        CRYSTAL_WORKERS: ${{ matrix.opts.workers || 1 }}
 
   run-tests-with-interpreter:
     name: Run tests with interpreter
@@ -171,41 +162,41 @@ jobs:
     needs: [build-release]
     if: ${{ !cancelled() }}
     steps:
-      - name: Disable CRLF line ending substitution
-        run: |
-          git config --global core.autocrlf false
+    - name: Disable CRLF line ending substitution
+      run: |
+        git config --global core.autocrlf false
 
-      - name: Download Crystal source
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+    - name: Download Crystal source
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
-      - name: Download Crystal executable
-        uses: actions/download-artifact@v8
-        with:
-          name: crystal-${{ inputs.arch }}-windows-msvc
-          path: build
+    - name: Download Crystal executable
+      uses: actions/download-artifact@v8
+      with:
+        name: crystal-${{ inputs.arch }}-windows-msvc
+        path: build
 
-      - name: Set up environment
-        run: |
-          Add-Content $env:GITHUB_PATH "$(pwd)\build"
-          Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
-          Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
-          Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
-          Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
-        env:
-          INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
-          INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
-          INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
+    - name: Set up environment
+      run: |
+        Add-Content $env:GITHUB_PATH "$(pwd)\build"
+        Add-Content $env:GITHUB_ENV "CRYSTAL_SPEC_COMPILER_BIN=$(pwd)\build\crystal.exe"
+        Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
+        Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
+        Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
+      env:
+        INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
+        INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
+        INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
 
-      - name: Build crystal-pu
-        run: make -f Makefile.win build\crystal-pu.exe O=build
+    - name: Build crystal-pu
+      run: make -f Makefile.win build\crystal-pu.exe O=build
 
-      - name: Run stdlib specs with interpreter
-        run: bin\crystal i spec\std_spec.cr
+    - name: Run stdlib specs with interpreter
+      run: bin\crystal i spec\std_spec.cr
 
-      - name: Run primitives specs with interpreter
-        run: bin\crystal i spec\primitives_spec.cr
+    - name: Run primitives specs with interpreter
+      run: bin\crystal i spec\primitives_spec.cr
 
   build-installer:
     name: Build installer
@@ -213,47 +204,47 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     needs: [build-release]
     steps:
-      - name: Disable CRLF line ending substitution
-        run: |
-          git config --global core.autocrlf false
+    - name: Disable CRLF line ending substitution
+      run: |
+        git config --global core.autocrlf false
 
-      - name: Download Crystal source
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+    - name: Download Crystal source
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
-      - name: Download Crystal executable
-        uses: actions/download-artifact@v8
-        with:
-          name: crystal-${{ inputs.arch }}-windows-msvc
-          path: etc/win-ci/portable
+    - name: Download Crystal executable
+      uses: actions/download-artifact@v8
+      with:
+        name: crystal-${{ inputs.arch }}-windows-msvc
+        path: etc/win-ci/portable
 
-      - name: Set up Inno Setup
-        run: |
-          Invoke-WebRequest -Uri https://github.com/jrsoftware/issrc/releases/download/is-7_0_2/innosetup-7.0.2-x64.exe -OutFile C:\is.exe
-          C:\is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+    - name: Set up Inno Setup
+      run: |
+        Invoke-WebRequest -Uri https://github.com/jrsoftware/issrc/releases/download/is-7_0_2/innosetup-7.0.2-x64.exe -OutFile C:\is.exe
+        C:\is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 
-      - name: Set up environment
-        run: |
-          Add-Content $env:GITHUB_PATH "$(pwd)\etc\win-ci\portable"
-          Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
-          Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
-          Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
-        env:
-          INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
-          INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
-          INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
+    - name: Set up environment
+      run: |
+        Add-Content $env:GITHUB_PATH "$(pwd)\etc\win-ci\portable"
+        Add-Content $env:GITHUB_ENV "LLVM_VERSION=$env:INPUTS_LLVM_VERSION"
+        Add-Content $env:GITHUB_ENV "LLVM_TARGETS=$env:INPUTS_LLVM_TARGETS"
+        Add-Content $env:GITHUB_ENV "LLVM_LDFLAGS=$env:INPUTS_LLVM_LDFLAGS"
+      env:
+        INPUTS_LLVM_VERSION: ${{ inputs.llvm_version }}
+        INPUTS_LLVM_TARGETS: ${{ inputs.llvm_targets }}
+        INPUTS_LLVM_LDFLAGS: ${{ inputs.llvm_ldflags }}
 
-      - name: Build docs
-        run: make -f Makefile.win install_docs prefix=etc\win-ci\portable
+    - name: Build docs
+      run: make -f Makefile.win install_docs prefix=etc\win-ci\portable
 
-      - name: Build installer
-        working-directory: ./etc/win-ci
-        run: |
-          & "C:\Program Files\Inno Setup 7\ISCC.exe" crystal.iss
+    - name: Build installer
+      working-directory: ./etc/win-ci
+      run: |
+        & "C:\Program Files\Inno Setup 7\ISCC.exe" crystal.iss
 
-      - name: Upload Crystal installer
-        uses: actions/upload-artifact@v7
-        with:
-          name: crystal-installer
-          path: etc/win-ci/Output/crystal-setup.exe
+    - name: Upload Crystal installer
+      uses: actions/upload-artifact@v7
+      with:
+        name: crystal-installer
+        path: etc/win-ci/Output/crystal-setup.exe
